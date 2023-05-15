@@ -1,34 +1,40 @@
+const { getBooksBorrowedCount } = require("./home");
+
 function findAuthorById(authors, id) {
- let found = authors.find((author) => author.id === id);
- return found;
+  return _findElementById(authors, id);
 }
 
 function findBookById(books, id) {
- let foundBooks = books.find((book) => book.id === id);
- return foundBooks;
+  return _findElementById(books, id);
 }
 
 function partitionBooksByBorrowedStatus(books) {
- let booksReturned = books.filter((book) =>
-  book.borrows.every((borrow) => borrow.returned === true)
- );
-   let booksBorrowed = books.filter((book) =>
-  book.borrows.some((borrow) => borrow.returned === false)
- );
-   let finalArray = [[...booksBorrowed], [...booksReturned]];
- return finalArray;
-}
-                                  
-
-function getBorrowersForBook(book, accounts) {
- return book.borrows
-  .map((borrow) => {
-   let account = accounts.find((account) => account.id === borrow.id);
-   return { ...borrow, ...account };
-  })
-  .slice(0, 10);
+  const returned = true;
+  const borrowed = !returned;
+  const borrowedBooks = _filterBorrowed(books, borrowed);
+  const returnedBooks = _filterBorrowed(books, returned);
+  return [[...borrowedBooks], [...returnedBooks]];
 }
 
+function getBorrowersForBook({ borrows }, accounts) {
+  const borrowers = [];
+  for (let record in borrows) {
+    const borrowId = borrows[record].id;
+    const matchingAccount = _findElementById(accounts, borrowId);
+    borrowers.push({ ...borrows[record], ...matchingAccount });
+  }
+  return borrowers.slice(0, 10);
+
+ 
+}
+
+function _findElementById(elements, id) {
+  return elements.find((element) => element.id === id);
+}
+
+function _filterBorrowed(books, status) {
+  return books.filter(({ borrows }) => status === borrows[0].returned);
+}
 
 module.exports = {
   findAuthorById,
