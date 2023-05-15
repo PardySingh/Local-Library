@@ -1,52 +1,36 @@
 function findAccountById(accounts, id) {
- let foundId = accounts.find((account) => account.id === id);
- return foundId;
+  return accounts.find((account) => account.id === id);
 }
 
 function sortAccountsByLastName(accounts) {
- accounts.sort((accountA, accountB) =>
-  accountA.name.last.toLowerCase() > accountB.name.last.toLowerCase() ? 1 : -1
- );
- return accounts;
+  const sorted = [...accounts];
+  sorted.sort((acnt1, acnt2) =>
+    acnt1.name.last.toLowerCase() > acnt2.name.last.toLowerCase() ? 1 : -1
+  );
+  return sorted;
+
+ 
 }
 
 function getTotalNumberOfBorrows(account, books) {
- let totalBorrows = 0;
- for (let i = 0; i < books.length; i++) {
-  for (let j = 0; j < books[i].borrows.length; j++) {
-   if (account.id === books[i].borrows[j].id) {
-    totalBorrows += 1;
-   }
-  }
- }
- return totalBorrows;
+  const accountId = account.id;
+  return books.reduce((totalBorrowed, { borrows }) => {
+    if (borrows.some((record) => record.id === accountId)) totalBorrowed++;
+    return totalBorrowed;
+  }, 0);
 }
 
 function getBooksPossessedByAccount(account, books, authors) {
- let result = [];
- let borrowMatch = [];
- books.forEach((item) => {
-  const borrowed = item.borrows;
-  const book = {
-   id: item.id,
-   title: item.title,
-   genre: item.genre,
-   authorId: item.authorId,
-   author: {},
-   borrows: {}
-  };
-  const { id, title, genre, authorId, author, borrows } = book;
-
-  borrowed.forEach((borrow) => {
-   if (borrow.id === account.id && borrow.returned === false) {
-    result.push(book);
-    borrowMatch.push(borrow);
-    book.borrows = borrowMatch;
-    book.author = authors.filter((auth) => auth.id === book.authorId)[0];
-   }
-  });
- });
- return result;
+  return (
+    books
+      .filter(
+        (book) => book.borrows[0].id === account.id && !book.borrows[0].returned
+      )
+      .map((book) => {
+        book["author"] = authors.find((author) => author.id === book.authorId);
+        return book;
+      })
+  );
 }
 
 module.exports = {
