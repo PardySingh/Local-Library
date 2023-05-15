@@ -1,63 +1,69 @@
 function getTotalBooksCount(books) {
- return books.length;
+  return arrayItemCount(books);
 }
 
 function getTotalAccountsCount(accounts) {
- return accounts.length;
+  return arrayItemCount(accounts);
 }
 
 function getBooksBorrowedCount(books) {
- let booksCheckedOut = books.filter(
-  (book) =>
-   book.borrows.filter((record) => record.returned === false).length > 0
- );
- return booksCheckedOut.length;
+  return books.reduce((borrowCount, { borrows }) => {
+    const mostRecent = borrows[0];
+    if (!mostRecent.returned) borrowCount++;
+    return borrowCount;
+  }, 0);
 }
 
 function getMostCommonGenres(books) {
- let map = {};
- books.forEach((num) => {
-  if (map[num.genre]) {
-   map[num.genre]++;
-  } else {
-   map[num.genre] = 1;
-  }
- });
- return Object.entries(map)
-  .map(([name, count]) => {
-   return {
-    name,
-    count
-   };
-  })
-  .sort((a, b) => b.count - a.count)
-  .slice(0, 5);
+  return _sortNSlice(
+    books
+      .reduce((genres, book) => {
+        const matchingGenre = genres.find((genre) => genre.name === book.genre);
+        !matchingGenre
+          ? genres.push({ name: book.genre, count: 1 })
+          : matchingGenre.count++;
+        return genres;
+      }, [])
+  );
 }
 
 function getMostPopularBooks(books) {
- return books
-  .map((book) => {
-   return { name: book.title, count: book.borrows.length };
-  })
-  .sort((a, b) => (a.count < b.count ? 1 : -1))
-  .slice(0, 5);
+  return _sortNSlice(
+    books.map(({ title, borrows }) => ({
+      name: title,
+      count: arrayItemCount(borrows),
+    }))
+  );
 }
 
 function getMostPopularAuthors(books, authors) {
- let result = [];
- authors.forEach((author) => {
-  let theAuthor = {
-   name: `${author.name.first} ${author.name.last}`,
-   count: 0
-  };
-  books.forEach((book) => {
-   if (book.authorId === author.id) {
-    theAuthor.count += book.borrows.length;
-   }
-  });
-  result.push(theAuthor);
- });
- return result.sort((a, b) => b.count - a.count).slice(0, 5);
+  return _sortNSlice(
+    authors.map(({ name: { first, last }, id }) => ({
+      name: `${first} ${last}`, 
+      count: _authorBorrows(books, id), 
+    }))
+  );
+}
+
+
+function _sortNSlice(arr, slicer = 5) {
+  const newArr = [...arr];
+  return newArr
+    .sort(({ count: count1 }, { count: count2 }) => count2 - count1)
+    .slice(0, slicer);
+}
+
+
+function _authorBorrows(books, id) {
+  return books.reduce((totalBorrows, { authorId, borrows }) => {
+    if (authorId === id) totalBorrows += arrayItemCount(borrows);
+    return totalBorrows;
+  }, 0);
+}
+
+
+function arrayItemCount(item) {
+  return item.length;
 }
 
 module.exports = {
